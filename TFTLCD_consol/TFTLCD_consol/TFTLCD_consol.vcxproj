@@ -65,7 +65,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="tftlcd.c" />
+    <ClCompile Include="tftlcd.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="tftlcd.h" />
