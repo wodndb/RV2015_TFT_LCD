@@ -28,6 +28,7 @@
 #include <cv.h>
 #include <highgui.h>
 #include <deque>
+#include <map>
 
 ///
 //	Macros

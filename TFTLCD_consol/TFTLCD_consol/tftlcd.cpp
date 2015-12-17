@@ -52,14 +52,17 @@ void PanelImage::getCellSize(void)
 	}
 	else
 	{
-		Mat grayImage = this->srcImage.clone();				// Gray Image for find cell size
-		cvtColor(this->srcImage, grayImage, CV_RGB2GRAY);	// Convert source image to gray scale image
+		Mat sourceImage = this->srcImage.clone();
+		Mat grayImage = sourceImage.clone();				// Gray Image for find cell size
+		cvtColor(sourceImage, grayImage, CV_RGB2GRAY);	// Convert source image to gray scale image
 		uchar maxValueX = 0;								// Max value on X Axis at middle point of height
 		uchar maxValueY = 0;								// Max value on Y axis at middle point of width
 		int middlePX = this->srcImage.cols / 2;				// Middle point of width
 		int middlePY = this->srcImage.rows / 2;				// Middle point of height
 		deque<int> pitchPointSampleX;
 		deque<int> pitchPointSampleY;
+
+		//Canny(grayImage, grayImage, 100, 300, 3);
 
 		// Find max value (that is also called pitch value) on X axis and Y axis
 		for(int x = 0; x < grayImage.cols; x++)
@@ -72,37 +75,125 @@ void PanelImage::getCellSize(void)
 		}
 
 		// Find points about max value on X axis and Y axis
-		for(int x = 1; x < grayImage.cols; x++) {
+		for(int x = 1; x < grayImage.cols - 1; x++) {
 			//최대값 - 10보다 크거나, 이전 픽셀보다 값이 10 이상 차이나는 경우 pitch값이다.
 			if(*(grayImage.ptr<uchar>(middlePY, x)) > maxValueX - 10 &&
-				*(grayImage.ptr<uchar>(middlePY, x)) > *(grayImage.ptr<uchar>(middlePY, x - 1)) + 10)
+				*(grayImage.ptr<uchar>(middlePY, x)) > *(grayImage.ptr<uchar>(middlePY, x - 1)) &&
+				*(grayImage.ptr<uchar>(middlePY, x)) >= *(grayImage.ptr<uchar>(middlePY, x + 1)))
 			{
 				pitchPointSampleX.push_back(x);
+				//circle(srcImage, Point(x, middlePY), 10, cv::Scalar(255. ), 2);
+				//printf("%5d %4d %4d\n", x, *(grayImage.ptr<uchar>(middlePY, x)),
+				//	*(grayImage.ptr<uchar>(middlePY, x - 1)) - *(grayImage.ptr<uchar>(middlePY, x)));
 			}
 		}
-		for(int y = 1; y < grayImage.rows; y++) {
+		for(int y = 1; y < grayImage.rows - 1; y++) {
 			//최대값 - 10보다 크거나, 이전 픽셀보다 값이 10 이상 차이나는 경우 pitch값이다.
 			if(*(grayImage.ptr<uchar>(y, middlePX)) > maxValueY - 10 &&
-				*(grayImage.ptr<uchar>(y, middlePX)) > *(grayImage.ptr<uchar>(y - 1, middlePX)) + 10)
+				*(grayImage.ptr<uchar>(y, middlePX)) > *(grayImage.ptr<uchar>(y - 1, middlePX)) &&
+				*(grayImage.ptr<uchar>(y, middlePX)) >= *(grayImage.ptr<uchar>(y + 1, middlePX)))
 			{
 				pitchPointSampleY.push_back(y);
+				//circle(srcImage, Point(middlePX, y), 10, cv::Scalar(255. ), 2);
+				printf("%5d %4d %4d\n", y, *(grayImage.ptr<uchar>(y, middlePX)),
+					*(grayImage.ptr<uchar>(y - 1, middlePX)) - *(grayImage.ptr<uchar>(y, middlePX)));
 			}
 		}
 		
 		int maxPitchLengthX = 0;
+		int maxPitchNumX = 0;
 		int maxPitchLengthY = 0;
+		int maxPitchNumY = 0;
+
+		map<int, int> lengthMapX;
+		map<int, int> lengthMapY;
+		map<int, int>::iterator findIter;
+		map<int, int>::iterator iterPos;
 
 		// Sampling pitch points to find cell size
 		for(int i = 0; i < pitchPointSampleX.size() - 1; i++) {
-			maxPitchLengthX = MAX(maxPitchLengthX, pitchPointSampleX.at(i + 1) - pitchPointSampleX.at(i));
+			findIter = lengthMapX.find(pitchPointSampleX.at(i + 1) - pitchPointSampleX.at(i));
+			if(findIter != lengthMapX.end()) {
+				findIter->second++;
+			}
+			else {
+				lengthMapX.insert(map<int, int>::value_type(pitchPointSampleX.at(i + 1) - pitchPointSampleX.at(i), 1));
+			}
 		}
-		for(int i = 0; i < pitchPointSampleY.size() - 1; i++) {
+
+		for(iterPos = lengthMapX.begin(); iterPos != lengthMapX.end(); ++iterPos) {
+			if(maxPitchNumX < iterPos->second) {
+				maxPitchNumX = iterPos->second;
+				maxPitchLengthX = iterPos->first;
+			}
+		}
+
+		int pitchSizeX = pitchPointSampleX.size();
+
+		for(int i = 0; i < pitchSizeX - 1; i++) {
+			if( maxPitchLengthX == pitchPointSampleX.at(1) - pitchPointSampleX.at(0) ) {
+				pitchPointSampleX.push_back(pitchPointSampleX.front());
+			}
+			pitchPointSampleX.pop_front();
+		}
+		pitchPointSampleX.pop_front();
+
+		maxPitchLengthX = pitchPointSampleX.at(1) - pitchPointSampleX.at(0);
+		pitchSizeX = pitchPointSampleX.size();
+
+		for(int i = 1; i < pitchSizeX - 2; i++) {
+			maxPitchLengthX = MIN(maxPitchLengthX, pitchPointSampleX.at(i + 1) - pitchPointSampleX.at(i));
+		}
+
+		
+
+		/// Y
+
+		/*for(int i = 0; i < pitchPointSampleY.size() - 1; i++) {
 			maxPitchLengthY = MAX(maxPitchLengthY, pitchPointSampleY.at(i + 1) - pitchPointSampleY.at(i));
+		}*/
+
+		for(int i = 0; i < pitchPointSampleY.size() - 1; i++) {
+			findIter = lengthMapY.find(pitchPointSampleY.at(i + 1) - pitchPointSampleY.at(i));
+			if(findIter != lengthMapY.end()) {
+				findIter->second++;
+			}
+			else {
+				lengthMapY.insert(map<int, int>::value_type(pitchPointSampleY.at(i + 1) - pitchPointSampleY.at(i), 1));
+			}
+		}
+		
+
+		printf("------------\n");
+		for(iterPos = lengthMapY.begin(); iterPos != lengthMapY.end(); ++iterPos) {
+			printf("%d %d\n", iterPos->first, iterPos->second);
+			if(maxPitchNumY < iterPos->second) {
+				maxPitchNumY = iterPos->second;
+				maxPitchLengthY = iterPos->first;
+			}
+		}
+
+		int pitchSizeY = pitchPointSampleY.size();
+
+		for(int i = 0; i < pitchSizeY - 1; i++) {
+			if( maxPitchLengthY == pitchPointSampleY.at(1) - pitchPointSampleY.at(0) ) {
+				pitchPointSampleY.push_back(pitchPointSampleY.front());
+			}
+			pitchPointSampleY.pop_front();
+		}
+		pitchPointSampleY.pop_front();
+
+		maxPitchLengthY = pitchPointSampleY.at(1) - pitchPointSampleY.at(0);
+		pitchSizeY = pitchPointSampleY.size();
+
+		for(int i = 1; i < pitchSizeY - 2; i++) {
+			maxPitchLengthY = MIN(maxPitchLengthY, pitchPointSampleY.at(i + 1) - pitchPointSampleY.at(i));
 		}
 
 		// Set cell size
 		this->cellSizeX = maxPitchLengthX;
 		this->cellSizeY = maxPitchLengthY;
+		printf("%d %d\n", maxPitchLengthX, maxPitchLengthY);
 	}
 }
 
@@ -209,7 +300,7 @@ void PanelImage::autoDefectSearch(void) {
 		Point a = Point(DAIterPos->left, DAIterPos->top);
 		Point b = Point(DAIterPos->right, DAIterPos->bottom);
 		rectangle(sourceImage, a, b, cv::Scalar(0.0, 0.0, 255.0), 1);
-		printf("%d\n", DAIterPos->top + DAIterPos->bottom);
+		//printf("%d\n", DAIterPos->top + DAIterPos->bottom);
 		DAIterPos++;
 	}
 	
@@ -325,23 +416,92 @@ void PanelImage::mergeDefectArea(int range) {
 	this->DefectInfo = mergedAreaInfo;
 }
 
-//void PanelImage::findCellPoint(void) {
-//	//코너 검출을 위한 영상 준비
-//	Mat grayImage = this->srcImage.clone();
-//	cvtColor(this->srcImage, grayImage, CV_RGB2GRAY);
-//	Mat eigImage = this->srcImage.clone();
-//	Mat tempImage = this->srcImage.clone();
-//	vector<Point2f> corners;
-//	int cornerCount = 1024;		//코너의 최대 개수를 설정
-//	goodFeaturesToTrack(grayImage, corners, 1024, 0.01, 10, Mat(), 3, false, 0.04);
-//
-//	for (int i = 0; i < cornerCount; i++)
-//	{
-//		cvCircle(this->srcImage, cvPointFrom32f(corners[i]), 2, CV_RGB(0, 255, 0));
-//	}
-//	cvShowImage("oriImage", oriImage);
-//	cvWaitKey(0);
-//}
+void PanelImage::findCellPoint(void) {
+	//코너 검출을 위한 영상 준비
+	Mat subImage = this->srcImage(Rect((this->srcImage.cols - this->cellSizeX) / 2, 
+										(this->srcImage.rows - this->cellSizeY) / 2,
+										this->cellSizeX, this->cellSizeY));
+	Mat grayImage = subImage.clone();
+	Mat cannyImage = subImage.clone();
+	Mat dst = subImage.clone();
+	cvtColor(subImage, grayImage, CV_RGB2GRAY);
+	Canny(grayImage, cannyImage, 100, 300, 3);
+
+	int *edgeAccDataX = (int*)malloc(sizeof(int) * cannyImage.cols);
+	int *edgeAccDataY = (int*)malloc(sizeof(int) * cannyImage.rows);
+
+	for(int i = 0; i < cannyImage.cols; i++) {edgeAccDataX[i] = 0;}
+	for(int i = 0; i < cannyImage.rows; i++) {edgeAccDataY[i] = 0;}
+
+	for(int y = 0; y < cannyImage.rows; y++) {
+		for(int x = 0; x < cannyImage.cols; x++) {
+			if(*cannyImage.ptr<uchar>(y, x) == 255) {
+				edgeAccDataX[x]++;
+				edgeAccDataY[y]++;
+			}
+		}
+	}
+
+	////////////////////
+	//	최대값 탐색
+
+	//	초기화
+	int maxValIndexX = 0;
+	int maxValX = edgeAccDataX[grayImage.cols - 1] + edgeAccDataX[0] + edgeAccDataX[1];
+	int maxValIndexY = 0;
+	int maxValY = edgeAccDataY[grayImage.rows - 1] + edgeAccDataY[0] + edgeAccDataY[1];
+	int tempSum = 0;
+
+	////
+	//	Y축
+	printf("<Y>\n");
+
+	for(int i = 1; i < grayImage.rows - 1; i++) {
+		tempSum = edgeAccDataY[i - 1] + edgeAccDataY[i] + edgeAccDataY[i + 1];
+		if(maxValY < tempSum) {
+			maxValIndexY = i;
+			maxValY = tempSum;
+		}
+		//printf("%d\t%d\n", edgeAccDataY[i], tempSum);
+	}
+	
+	tempSum = edgeAccDataY[grayImage.rows - 2] + edgeAccDataY[grayImage.rows - 1] + edgeAccDataY[0];
+	if(maxValY < tempSum) {
+		maxValIndexY = grayImage.rows - 1;
+		maxValY = tempSum;
+	}
+
+	////
+	//	X축
+
+	printf("<X>\n");
+	for(int i = 1; i < grayImage.cols - 1; i++) {
+		tempSum = edgeAccDataX[i - 1] + edgeAccDataX[i] + edgeAccDataX[i + 1];
+		if(maxValX < tempSum) {
+			maxValIndexX = i;
+			maxValX = tempSum;
+		}
+		//printf("%d\t%d\n", edgeAccDataX[i], tempSum);
+	}
+
+	tempSum = edgeAccDataX[grayImage.cols - 2] + edgeAccDataX[grayImage.cols - 1] + edgeAccDataX[0];
+	if(maxValX < tempSum) {
+		maxValIndexX = grayImage.cols - 1;
+		maxValX = tempSum;
+	}
+
+	//printf("%d %d\n", maxValIndexX, maxValIndexY);
+
+	line(subImage, Point(0, maxValIndexY + 1), Point(cannyImage.cols, maxValIndexY + 1), Scalar(255, 0, 0));
+	line(subImage, Point(maxValIndexX + 2, 0), Point(maxValIndexX + 2, cannyImage.rows), Scalar(255, 0, 0));
+
+	addWeighted(grayImage, 0.5, cannyImage, 0.5, 0.0, dst);
+	
+	imshow("test1", subImage);
+	imshow("test2", dst);
+
+	cvWaitKey(0);
+}
 
 ////////////////////////////////////////////////////////
 //
