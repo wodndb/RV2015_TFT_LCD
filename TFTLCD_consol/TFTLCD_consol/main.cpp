@@ -18,9 +18,10 @@ int main(void) {
 
 	
 	PanelImage pi;
-	pi.openImage(String("000012.bmp"));
+	pi.openImage(String("000035.bmp"));
 	pi.autoDefectSearch();
 	pi.findCellPoint();
+	pi.findDefectCell();
 	
 	return 0;
 }

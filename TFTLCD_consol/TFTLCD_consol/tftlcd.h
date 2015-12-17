@@ -98,11 +98,14 @@ public:
 	///
 	// Member variables
 	///
-	Mat srcImage;		// Original source image
-	Mat binImage;		// Binary image only defect area in source image
-	Mat resultImage;	// Marked image about defect area
-	int cellSizeX;		// Width of cell size
-	int cellSizeY;		// Height of cell size
+	Mat srcImage;			// Original source image
+	Mat binImage;			// Binary image only defect area in source image
+	Mat resultImage;		// Marked image about defect area
+	int cellSizeX;			// Width of cell size
+	int cellSizeY;			// Height of cell size
+	int cellPointX;			// X Axis Coordinate of cell
+	int cellPointY;			// Y Axis Coordinate of cell
+	bool* defectCellIdx;	// DefectCell Index;
 
 	deque<DefectImage> DefectInfo;	// Defect area information
 
@@ -110,17 +113,33 @@ public:
 	// Constructor
 	///
 	PanelImage(void) {
-		int cellSizeX = 0;
-		int cellSizeY = 0;
+		this->cellSizeX = 0;
+		this->cellSizeY = 0;
+		this->cellPointX = 0;
+		this->cellPointY = 0;
+		this->defectCellIdx = NULL;
 	}
 
-	PanelImage(Mat _srcImage, Mat _binImage, Mat _resultImage, int cellSizeX, int CellSizeY, deque<DefectImage> _DefectInfo) {
+	PanelImage(Mat _srcImage, Mat _binImage, Mat _resultImage, int _cellSizeX, int _cellSizeY, int _cellPointX, int _cellPointY, deque<DefectImage> _DefectInfo) {
 		this->srcImage = _srcImage.clone();
 		this->binImage = _binImage.clone();
 		this->resultImage = _resultImage.clone();
-		this->cellSizeX = 0;
-		this->cellSizeY = 0;
+		this->cellSizeX = _cellSizeX;
+		this->cellSizeY = _cellSizeY;
+		this->cellPointX = _cellPointX;
+		this->cellPointY = _cellPointY;
 		this->DefectInfo = _DefectInfo;
+		this->DefectInfo = _DefectInfo;
+		this->defectCellIdx = NULL;
+	}
+
+	///
+	//	Destructor
+	///
+	~PanelImage() {
+		if(this->defectCellIdx != NULL) {
+			free(this->defectCellIdx);
+		}
 	}
 
 	///
@@ -171,6 +190,13 @@ public:
 	//	Find cell point for extract defect cell
 	//
 	void findCellPoint(void);
+
+	///
+	//	findDefectCellArea
+	//
+	//	Find defect cell
+	//
+	void findDefectCell(void);
 };
 
 ////////////////////////////////////////////////////////
