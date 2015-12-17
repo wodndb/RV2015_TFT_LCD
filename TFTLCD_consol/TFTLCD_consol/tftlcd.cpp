@@ -325,6 +325,24 @@ void PanelImage::mergeDefectArea(int range) {
 	this->DefectInfo = mergedAreaInfo;
 }
 
+//void PanelImage::findCellPoint(void) {
+//	//코너 검출을 위한 영상 준비
+//	Mat grayImage = this->srcImage.clone();
+//	cvtColor(this->srcImage, grayImage, CV_RGB2GRAY);
+//	Mat eigImage = this->srcImage.clone();
+//	Mat tempImage = this->srcImage.clone();
+//	vector<Point2f> corners;
+//	int cornerCount = 1024;		//코너의 최대 개수를 설정
+//	goodFeaturesToTrack(grayImage, corners, 1024, 0.01, 10, Mat(), 3, false, 0.04);
+//
+//	for (int i = 0; i < cornerCount; i++)
+//	{
+//		cvCircle(this->srcImage, cvPointFrom32f(corners[i]), 2, CV_RGB(0, 255, 0));
+//	}
+//	cvShowImage("oriImage", oriImage);
+//	cvWaitKey(0);
+//}
+
 ////////////////////////////////////////////////////////
 //
 //	Public functions

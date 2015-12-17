@@ -163,6 +163,13 @@ public:
 	/// int range	: Range for merge defect area.
 	//
 	void mergeDefectArea(int range);
+
+	///
+	//	findCellPoint
+	//
+	//	Find cell point for extract defect cell
+	//
+	void findCellPoint(void);
 };
 
 ////////////////////////////////////////////////////////
